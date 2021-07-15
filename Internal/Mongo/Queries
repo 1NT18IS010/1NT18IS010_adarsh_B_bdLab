@@ -1,0 +1,103 @@
+1.Demonstrate the usage of $match,$group aggregate pipelines-
+
+> db.employee.aggregate({$match: {"Eligible_for_PayRise":{$eq:false}}},{$group:{_id: "$YOS",AvgSalary:{$avg:"$Salary"}}},{$sort:{_id: 1}});
+
+{ "_id" : 1, "AvgSalary" : 225000 }
+{ "_id" : 2, "AvgSalary" : 500000 }
+{ "_id" : 3, "AvgSalary" : 100000 }
+{ "_id" : 4, "AvgSalary" : 100000 }
+{ "_id" : 6, "AvgSalary" : 100000 }
+{ "_id" : 8, "AvgSalary" : 125000 }
+{ "_id" : 10, "AvgSalary" : 100000 }
+{ "_id" : 16, "AvgSalary" : 500000 }
+{ "_id" : 17, "AvgSalary" : 100000 }
+
+2.Demonstrate the Map-Reduce aggregate function on this dataset-
+
+> var mapF=function(){emit(this["YOS"],this["Salary"]);};
+> var redF=function(years,sal){return Array.sum(sal);};
+> db.employee.mapReduce(mapF,redF,{out:"mapreduceout"})
+{ "result" : "mapreduceout", "ok" : 1 }
+> db.mapreduceout.find().pretty();
+{ "_id" : 12, "value" : 250000 }
+{ "_id" : 17, "value" : 100000 }
+{ "_id" : 7, "value" : 125000 }
+{ "_id" : 8, "value" : 125000 }
+{ "_id" : 2, "value" : 810000 }
+{ "_id" : 6, "value" : 100000 }
+{ "_id" : 3, "value" : 200000 }
+{ "_id" : 4, "value" : 250000 }
+{ "_id" : 1, "value" : 450000 }
+{ "_id" : 11, "value" : 300000 }
+{ "_id" : 5, "value" : 80000 }
+{ "_id" : 10, "value" : 100000 }
+{ "_id" : 16, "value" : 500000 }
+
+3.Find out the Employees, who are paying tax>50000 and are not eligible for pay raise-
+
+> db.employee.find({$and:[{["Eligible_for_PayRise"]:false},{["Tax"]:{$gt:50000}}]}).pretty();
+{
+        "_id" : ObjectId("60f00c56e845ec8be64a67ef"),
+        "Name" : "Shayam",
+        "YOS" : 1,
+        "NOI" : 3,
+        "Eligible_for_PayRise" : false,
+        "Salary" : 300000,
+        "Tax" : 55000
+}
+{
+        "_id" : ObjectId("60f00c56e845ec8be64a67f5"),
+        "Name" : "Aashutosh",
+        "YOS" : 16,
+        "NOI" : 2,
+        "Eligible_for_PayRise" : false,
+        "Salary" : 500000,
+        "Tax" : 70000
+}
+{
+        "_id" : ObjectId("60f00c56e845ec8be64a67fc"),
+        "Name" : "Saurabh",
+        "YOS" : 2,
+        "NOI" : 3,
+        "Eligible_for_PayRise" : false,
+        "Salary" : 500000,
+        "Tax" : 67000
+}
+
+4.Demonstrate the Alter and Drop commands on the dataset-
+
+> db.employee.find({Name:"Kshemu"}).pretty()
+{
+        "_id" : ObjectId("60f00c56e845ec8be64a67ea"),
+        "Name" : "Kshemu",
+        "YOS" : 3,
+        "NOI" : 1,
+        "Eligible_for_PayRise" : true,
+        "Salary" : 100000,
+        "Tax" : 30000
+}
+
+> db.employee.update({Name:"Kshemu"},{$set: {"Tax":5000}});
+WriteResult({ "nMatched" : 1, "nUpserted" : 0, "nModified" : 1 })
+> db.employee.find({Name:"Kshemu"}).pretty()
+{
+        "_id" : ObjectId("60f00c56e845ec8be64a67ea"),
+        "Name" : "Kshemu",
+        "YOS" : 3,
+        "NOI" : 1,
+        "Eligible_for_PayRise" : true,
+        "Salary" : 100000,
+        "Tax" : 5000
+}
+
+> db.employee.deleteOne( { Name:"Aryan" });
+{ "acknowledged" : true, "deletedCount" : 1 }
+> show collections;
+Salary
+employee
+mapreduceout
+> db.Salary.drop();
+true
+> show collections;
+employee
+mapreduceout
